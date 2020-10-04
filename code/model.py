@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 import numpy as np
+import math
 import copy
 import cv2
 
@@ -70,35 +71,37 @@ class Model:
         self.cnn = CNN(ConvLayer(in_channel=1, out_channel=4, pool_size=8),
                        ConvLayer(in_channel=4, out_channel=1, pool_size=2),
                        LinearLayer(self.d_model, dropout=0.1, n=2),
-                       OutputLayer(self.d_model, self.d_output))
+                       OutputLayer(self.d_model, self.d_output)).cuda()
 
     def train(self, data_batch, label_batch):
         data_batch = channel_fusion_images(data_batch)
-        label_batch = vectorization_integers(label_batch, size=self.d_output)
+        # label_batch = vectorization_integers(label_batch, size=self.d_output)
         epoch = 1
         batch_size = 10
-        nbatch = len(data_batch) // batch_size + 1
+        nbatch = math.ceil(len(data_batch) / batch_size)
         lr = 0.01
         optimizer = torch.optim.Adam(self.cnn.parameters(), lr=lr)
-        loss_func = nn.CrossEntropyLoss()
+        loss_func = nn.CrossEntropyLoss().cuda()
         for _ in range(epoch):
             for i in range(nbatch):
-                batch_x = torch.Tensor(data_batch[i * batch_size:(i + 1) * batch_size])
-                batch_y = torch.Tensor(label_batch[i * batch_size:(i + 1) * batch_size])
+                batch_x = torch.Tensor(data_batch[i * batch_size:(i + 1) * batch_size]).cuda()
+                batch_y = torch.Tensor(label_batch[i * batch_size:(i + 1) * batch_size]).cuda()
                 output = self.cnn(batch_x)
                 loss = loss_func(output, batch_y.long())
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                if i % 100 == 0:
+                    print(loss.cpu().detach().numpy())
 
     def predict(self, data_batch):
         result = []
         data_batch = channel_fusion_images(data_batch)
         batch_size = 10
-        nbatch = len(data_batch) // batch_size + 1
+        nbatch = math.ceil(len(data_batch) / batch_size)
         for i in range(nbatch):
-            batch_x = torch.Tensor(data_batch[i * batch_size:(i + 1) * batch_size])
-            output = self.cnn(batch_x)
+            batch_x = torch.Tensor(data_batch[i * batch_size:(i + 1) * batch_size]).cuda()
+            output = self.cnn(batch_x).cpu()
             max_index_sublist = output.argmax(1).numpy().tolist()
             result.extend(max_index_sublist)
         return result
