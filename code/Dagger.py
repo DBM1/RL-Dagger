@@ -25,5 +25,5 @@ class ExampleAgent(DaggerAgent):
 
     # select actions by your model
     def select_action(self, data_batch):
-        label_predict = self.model.predict(data_batch)
-        return label_predict
+        label_predict = self.model.predict([data_batch])
+        return label_predict[0]

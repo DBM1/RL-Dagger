@@ -136,9 +136,9 @@ def main():
 
 		# After you have labeled all the images, you can load the labels
 		# for training a model
-		with open('/imgs/label.txt', 'r') as f:
+		with open('imgs/label.txt', 'r') as f:
 			for label_tmp in f.readlines():
-				data_set['label'].append(label_tmp)
+				data_set['label'].append(int(label_tmp))
 
 		# design how to train your model with labeled data
 		agent.update(data_set['data'], data_set['label'])
