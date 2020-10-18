@@ -16,6 +16,8 @@ from multiprocessing import Process
 
 
 def plot(record):
+    with open('performance.txt', 'w+') as file:
+        file.write(str(record))
     plt.figure()
     fig, ax = plt.subplots()
     ax.plot(record['steps'], record['mean'],
@@ -141,7 +143,21 @@ def main():
 
     data_set = {'data': [], 'label': []}
     # start train your agent
-    for i in range(num_updates):
+    for i in range(data_index):
+        data_path = 'data/data_batch_' + str(i) + '/'
+        for j in range(args.num_steps):
+            pic_path = data_path + str(j) + '.jpeg'
+            data_set['data'].append(cv2.imread(pic_path))
+        with open(data_path + 'label.txt', 'r') as f:
+            for label_tmp in f.readlines():
+                data_set['label'].append(int(label_tmp))
+    agent.update(data_set['data'], data_set['label'])
+    with open('performance.txt') as f:
+        record_temp = eval(f.readline())
+        if record_temp is not None:
+            record = record_temp
+
+    for i in range(data_index, num_updates):
         # an example of interacting with the environment
         # we init the environment and receive the initial observation
         obs = envs.reset()
@@ -221,7 +237,8 @@ def main():
                     reward_episode_set.append(reward_episode)
                     reward_episode = 0
                     envs.reset()
-
+            if len(reward_episode_set) == 0:
+                reward_episode_set.append(0)
             end = time.time()
             print(
                 "TIME {} Updates {}, num timesteps {}, FPS {} \n query {}, avrage/min/max reward {:.1f}/{:.1f}/{:.1f}"

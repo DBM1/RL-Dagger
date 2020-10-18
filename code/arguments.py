@@ -1,5 +1,6 @@
 import argparse
 
+
 # import torch
 
 
@@ -16,21 +17,21 @@ def get_args():
     parser.add_argument(
         '--num-steps',
         type=int,
-        default=400)
+        default=50)
     parser.add_argument(
         '--test-steps',
         type=int,
-        default=2000)
+        default=200)
     parser.add_argument(
         '--num-frames',
         type=int,
-        default=100000)
+        default=4500)
 
     ## other parameter
     parser.add_argument(
         '--log-interval',
         type=int,
-        default=10,
+        default=5,
         help='log interval, one log per n updates (default: 10)')
     parser.add_argument(
         '--save-img',
@@ -46,6 +47,5 @@ def get_args():
         type=bool,
         default=False)
     args = parser.parse_args()
-
 
     return args
