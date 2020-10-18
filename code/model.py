@@ -5,18 +5,21 @@ import numpy as np
 import math
 import copy
 import cv2
+from sklearn.neighbors import KNeighborsClassifier
+import random
 
 
 class CNN(nn.Module):
-    def __init__(self, conv1, conv2, liner, output):
+    def __init__(self, conv1, conv2, conv3, liner, output):
         super(CNN, self).__init__()
         self.conv1 = conv1
         self.conv2 = conv2
+        self.conv3 = conv3
         self.liner = liner
         self.output = output
 
     def forward(self, data_batch):
-        return self.output(self.liner(self.conv2(self.conv1(data_batch))))
+        return self.output(self.liner(self.conv3(self.conv2(self.conv1(data_batch)))))
 
 
 class ConvLayer(nn.Module):
@@ -64,19 +67,33 @@ def clones(module, n):
     return nn.ModuleList([copy.deepcopy(module) for _ in range(n)])
 
 
-class Model:
+class BasicModel:
     def __init__(self):
+        self.actions = [0, 1, 2, 3, 4, 5, 11, 12]
+        pass
+
+    def train(self, data_batch, label_batch):
+        pass
+
+    def predict(self, data_batch):
+        pass
+
+
+class CnnModel(BasicModel):
+    def __init__(self):
+        super(CnnModel, self).__init__()
         self.d_model = 130
         self.d_output = 18
-        self.cnn = CNN(ConvLayer(in_channel=1, out_channel=4, pool_size=8),
-                       ConvLayer(in_channel=4, out_channel=1, pool_size=2),
-                       LinearLayer(self.d_model, dropout=0.1, n=2),
+        self.cnn = CNN(ConvLayer(in_channel=1, out_channel=4, pool_size=2),
+                       ConvLayer(in_channel=4, out_channel=8, pool_size=4),
+                       ConvLayer(in_channel=8, out_channel=1, pool_size=2),
+                       LinearLayer(self.d_model, dropout=0.1, n=3),
                        OutputLayer(self.d_model, self.d_output)).cuda()
 
     def train(self, data_batch, label_batch):
         data_batch = channel_fusion_images(data_batch)
         # label_batch = vectorization_integers(label_batch, size=self.d_output)
-        epoch = 1
+        epoch = 10
         batch_size = 10
         nbatch = math.ceil(len(data_batch) / batch_size)
         lr = 0.01
@@ -91,8 +108,7 @@ class Model:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                if i % 100 == 0:
-                    print(loss.cpu().detach().numpy())
+        print('CNN train finish')
 
     def predict(self, data_batch):
         result = []
@@ -104,6 +120,34 @@ class Model:
             output = self.cnn(batch_x).cpu()
             max_index_sublist = output.argmax(1).numpy().tolist()
             result.extend(max_index_sublist)
+        return result
+
+
+class KnnModel(BasicModel):
+    def __init__(self):
+        super(KnnModel, self).__init__()
+        self.knn = KNeighborsClassifier()
+
+        self.is_first_step = True
+
+    def train(self, data_batch, label_batch):
+        data_batch = np.array(channel_fusion_images(data_batch))
+        data_batch.squeeze(1)
+        data_batch = data_batch.reshape(-1, 210 * 160)
+        self.knn.fit(data_batch, label_batch)
+        self.is_first_step = False
+        print('KNN train finish')
+
+    def predict(self, data_batch):
+        result = []
+        if self.is_first_step:
+            for i in range(len(data_batch)):
+                result.append(self.actions[random.randint(0, 7)])
+        else:
+            data_batch = np.array(channel_fusion_images(data_batch))
+            data_batch.squeeze(1)
+            data_batch = data_batch.reshape(-1, 210 * 160)
+            result = self.knn.predict(data_batch)
         return result
 
 

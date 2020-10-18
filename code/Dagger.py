@@ -1,6 +1,6 @@
 import numpy as np
 from abc import abstractmethod
-from model import Model
+from model import CnnModel, KnnModel
 
 
 class DaggerAgent:
@@ -17,7 +17,8 @@ class ExampleAgent(DaggerAgent):
     def __init__(self, necessary_parameters=None):
         super(DaggerAgent, self).__init__()
         # init your model
-        self.model = Model()
+        # self.model = CnnModel()
+        self.model = KnnModel()
 
     # train your model with labeled data
     def update(self, data_batch, label_batch):
