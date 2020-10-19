@@ -109,7 +109,7 @@ def main():
     }
 
     # query_cnt counts queries to the expert
-    query_cnt = 0
+    query_cnt = data_index
 
     # environment initial
     envs = Env(args.env_name, args.num_stacks)
@@ -219,6 +219,7 @@ def main():
 
         # design how to train your model with labeled data
         agent.update(data_set['data'], data_set['label'])
+        query_cnt += 1
 
         if (i + 1) % args.log_interval == 0:
             total_num_steps = (i + 1) * args.num_steps

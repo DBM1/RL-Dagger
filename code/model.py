@@ -131,6 +131,8 @@ class KnnModel(BasicModel):
         self.is_first_step = True
 
     def train(self, data_batch, label_batch):
+        if data_batch is None or len(data_batch) == 0:
+            return
         data_batch = np.array(channel_fusion_images(data_batch))
         data_batch.squeeze(1)
         data_batch = data_batch.reshape(-1, 210 * 160)
